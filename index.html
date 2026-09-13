@@ -1,0 +1,1682 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="format-detection" content="telephone=no">
+<title>拼豆图纸生成器 · PinDou Studio</title>
+<style>
+/* ===================== 基础重置 ===================== */
+* { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+html, body { height: 100%; }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", "Helvetica Neue", Arial, sans-serif;
+  background: #eef1f5;
+  color: #1f2937;
+  overflow: hidden;
+  font-size: 14px;
+  line-height: 1.5;
+}
+button { font-family: inherit; cursor: pointer; border: none; background: none; color: inherit; font-size: inherit; }
+input { font-family: inherit; }
+
+/* ===================== 主布局 ===================== */
+.app { display: flex; height: 100vh; height: 100dvh; }
+
+/* ---------- 左侧参数面板 ---------- */
+.panel {
+  width: 350px; flex: 0 0 350px;
+  background: #ffffff;
+  border-right: 1px solid #e5e7eb;
+  overflow-y: auto;
+  padding: 16px 16px 44px;
+  display: flex; flex-direction: column; gap: 14px;
+  -webkit-overflow-scrolling: touch;
+}
+.panel::-webkit-scrollbar { width: 6px; }
+.panel::-webkit-scrollbar-thumb { background: #d1d5db; border-radius: 3px; }
+
+.brand h1 { font-size: 18px; font-weight: 700; letter-spacing: .5px; }
+.brand p { font-size: 12px; color: #9ca3af; margin-top: 3px; }
+
+.card {
+  background: #f9fafb;
+  border: 1px solid #eef0f3;
+  border-radius: 12px;
+  padding: 12px;
+  display: flex; flex-direction: column; gap: 10px;
+}
+.card h2 { font-size: 13px; font-weight: 600; color: #374151; }
+
+/* ---------- 上传区 ---------- */
+.drop {
+  border: 2px dashed #cbd5e1;
+  border-radius: 10px;
+  background: #ffffff;
+  padding: 20px 12px;
+  text-align: center;
+  transition: .2s;
+  cursor: pointer;
+}
+.drop:hover, .drop.over { border-color: #3b82f6; background: #eff6ff; }
+.drop .ico { font-size: 26px; line-height: 1; margin-bottom: 6px; }
+.drop p { font-size: 13px; color: #6b7280; }
+.drop p b { color: #3b82f6; }
+.drop small { display: block; margin-top: 4px; color: #9ca3af; font-size: 11px; }
+
+.thumb {
+  margin-top: 2px; border-radius: 8px; overflow: hidden;
+  border: 1px solid #e5e7eb; background: #ffffff;
+}
+.thumb img { display: block; width: 100%; max-height: 130px; object-fit: contain; }
+
+/* ---------- 表单控件 ---------- */
+.field { display: flex; flex-direction: column; gap: 6px; }
+.field > label {
+  font-size: 12px; color: #6b7280;
+  display: flex; justify-content: space-between; align-items: center;
+}
+.field.two { flex-direction: row; gap: 8px; }
+.field.two label { flex: 1; display: flex; align-items: center; gap: 6px; font-size: 12px; color: #6b7280; }
+.field.two input { flex: 1; width: auto; }
+
+.chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.chips button {
+  padding: 5px 12px; border-radius: 8px; background: #ffffff;
+  border: 1px solid #e2e8f0; font-size: 12.5px; color: #4b5563;
+  transition: .15s;
+}
+.chips button:hover { border-color: #93c5fd; color: #2563eb; }
+.chips button.on { background: #3b82f6; border-color: #3b82f6; color: #ffffff; font-weight: 600; }
+
+input[type=number] {
+  width: 100%; padding: 6px 8px;
+  border: 1px solid #e2e8f0; border-radius: 8px;
+  background: #ffffff; font-size: 13px; color: #1f2937;
+  outline: none;
+}
+input[type=number]:focus { border-color: #3b82f6; }
+
+.inline { display: flex; align-items: center; gap: 8px; font-size: 12px; color: #6b7280; }
+.inline input { width: 84px; }
+
+input[type=range] {
+  -webkit-appearance: none; appearance: none;
+  width: 100%; height: 4px; border-radius: 2px;
+  background: #e2e8f0; outline: none; margin: 4px 0;
+}
+input[type=range]::-webkit-slider-thumb {
+  -webkit-appearance: none; appearance: none;
+  width: 16px; height: 16px; border-radius: 50%;
+  background: #3b82f6; cursor: pointer;
+  box-shadow: 0 1px 3px rgba(0,0,0,.25);
+}
+input[type=range]::-moz-range-thumb {
+  width: 16px; height: 16px; border: none; border-radius: 50%;
+  background: #3b82f6; cursor: pointer;
+}
+
+.check { display: flex; align-items: center; gap: 7px; font-size: 13px; color: #4b5563; cursor: pointer; user-select: none; }
+.check input { width: 15px; height: 15px; accent-color: #3b82f6; cursor: pointer; }
+
+/* ---------- 按钮 ---------- */
+.btn {
+  display: flex; align-items: center; justify-content: center; gap: 6px;
+  padding: 9px 12px; border-radius: 9px;
+  font-size: 13px; font-weight: 500;
+  background: #3b82f6; color: #ffffff;
+  transition: .15s; width: 100%;
+}
+.btn:hover { background: #2563eb; }
+.btn:active { transform: scale(.98); }
+.btn.ghost { background: #ffffff; border: 1px solid #e2e8f0; color: #4b5563; }
+.btn.ghost:hover { background: #f3f4f6; color: #1f2937; }
+
+/* ---------- 右侧预览区 ---------- */
+.stage { flex: 1; min-width: 0; display: flex; flex-direction: column; background: #eef1f5; }
+
+.toolbar {
+  display: flex; flex-wrap: wrap; align-items: center; gap: 8px;
+  padding: 10px 14px;
+  background: #ffffff;
+  border-bottom: 1px solid #e5e7eb;
+}
+.seg { display: flex; background: #f1f5f9; border-radius: 9px; padding: 3px; gap: 2px; }
+.seg button {
+  padding: 5px 12px; border-radius: 7px;
+  font-size: 12.5px; color: #64748b; transition: .15s; white-space: nowrap;
+}
+.seg button.on {
+  background: #ffffff; color: #1e40af; font-weight: 600;
+  box-shadow: 0 1px 3px rgba(0,0,0,.08);
+}
+.toolbar .spacer { flex: 1; }
+.tbtn {
+  padding: 5px 11px; border-radius: 8px;
+  font-size: 12.5px; color: #64748b;
+  border: 1px solid #e2e8f0; background: #ffffff;
+  transition: .15s; white-space: nowrap;
+}
+.tbtn:hover { border-color: #93c5fd; color: #2563eb; }
+.tbtn.on { background: #dbeafe; border-color: #93c5fd; color: #1d4ed8; font-weight: 600; }
+
+.panes { flex: 1; min-height: 0; display: flex; gap: 1px; background: #e5e7eb; }
+.pane { flex: 1; min-width: 0; position: relative; background: #eef1f5; overflow: hidden; display: none; }
+.pane.show { display: block; }
+.pane-orig { background: #ffffff; }
+.pane-orig img { width: 100%; height: 100%; object-fit: contain; display: block; }
+.pane-grid canvas { width: 100%; height: 100%; display: block; touch-action: none; cursor: grab; }
+.pane-grid canvas.dragging { cursor: grabbing; }
+
+.empty-tip {
+  position: absolute; left: 0; right: 0; top: 0; bottom: 0;
+  display: flex; align-items: center; justify-content: center;
+  color: #9ca3af; font-size: 13px; pointer-events: none;
+}
+
+.stats {
+  display: flex; flex-wrap: wrap; gap: 18px;
+  padding: 9px 16px; background: #ffffff;
+  border-top: 1px solid #e5e7eb;
+  font-size: 12.5px; color: #6b7280;
+}
+.stats b { color: #1f2937; font-weight: 600; font-size: 14px; margin-left: 2px; }
+
+/* ===================== 移动端适配 ===================== */
+@media (max-width: 860px) {
+  html, body { height: auto; overflow: auto; }
+  .app { flex-direction: column; height: auto; }
+  .panel {
+    width: 100%; flex: none;
+    border-right: none; border-bottom: 1px solid #e5e7eb;
+    overflow: visible; padding-bottom: 20px;
+  }
+  .stage { height: 64vh; min-height: 340px; }
+  .stats { gap: 12px; font-size: 12px; }
+  .toolbar { padding: 8px 10px; gap: 6px; }
+}
+</style>
+</head>
+<body>
+
+<div class="app">
+
+  <!-- ==================== 左侧参数面板 ==================== -->
+  <aside class="panel">
+    <div class="brand">
+      <h1>🧩 拼豆图纸生成器</h1>
+      <p>纯本地处理 · 图片不会上传到任何服务器</p>
+    </div>
+
+    <!-- ① 上传图片 -->
+    <section class="card">
+      <h2>① 上传图片</h2>
+      <div class="drop" id="drop">
+        <div class="ico">🖼️</div>
+        <p><b>点击上传</b> 或拖拽图片到此处</p>
+        <small>支持 JPG / PNG / WebP</small>
+      </div>
+      <input type="file" id="fileInput" accept="image/jpeg,image/png,image/webp,image/*" style="display:none">
+      <div class="thumb" id="thumbBox" style="display:none">
+        <img id="thumbImg" alt="原图预览">
+      </div>
+    </section>
+
+    <!-- ② 图纸参数 -->
+    <section class="card">
+      <h2>② 图纸参数</h2>
+
+      <div class="field">
+        <label>图纸尺寸（横向格数）</label>
+        <div class="chips" id="sizeChips">
+          <button type="button" data-size="30">30</button>
+          <button type="button" data-size="50" class="on">50</button>
+          <button type="button" data-size="80">80</button>
+          <button type="button" data-size="100">100</button>
+          <button type="button" data-size="150">150</button>
+        </div>
+      </div>
+
+      <div class="field two">
+        <label>宽 <input type="number" id="inW" value="50" min="4" max="200"></label>
+        <label>高 <input type="number" id="inH" value="50" min="4" max="200"></label>
+      </div>
+
+      <label class="check"><input type="checkbox" id="lockRatio" checked> 锁定原图比例</label>
+
+      <div class="field">
+        <label>颜色数量</label>
+        <div class="chips" id="colorChips">
+          <button type="button" data-c="4">4</button>
+          <button type="button" data-c="8">8</button>
+          <button type="button" data-c="16" class="on">16</button>
+          <button type="button" data-c="32">32</button>
+          <button type="button" data-c="64">64</button>
+        </div>
+        <div class="inline">自定义 <input type="number" id="inColor" min="2" max="64" value="16"> 色</div>
+      </div>
+
+      <div class="field">
+        <label>亮度 <span id="vBri">0</span></label>
+        <input type="range" id="rBri" min="-100" max="100" value="0">
+      </div>
+      <div class="field">
+        <label>对比度 <span id="vCon">0</span></label>
+        <input type="range" id="rCon" min="-100" max="100" value="0">
+      </div>
+      <div class="field">
+        <label>饱和度 <span id="vSat">0</span></label>
+        <input type="range" id="rSat" min="-100" max="100" value="0">
+      </div>
+
+      <label class="check"><input type="checkbox" id="cbBg"> 一键去除图片背景</label>
+      <div class="field" id="bgTolWrap" style="display:none">
+        <label>背景容差 <span id="vTol">40</span></label>
+        <input type="range" id="rTol" min="5" max="120" value="40">
+      </div>
+    </section>
+
+    <!-- ③ 品牌色卡 -->
+    <section class="card">
+      <h2>③ 品牌色卡</h2>
+      <div class="chips" id="brandChips">
+        <button type="button" data-brand="mard" class="on">MARD 小豆</button>
+        <button type="button" data-brand="perler">Perler</button>
+        <button type="button" data-brand="hama">Hama</button>
+      </div>
+      <small style="color:#9ca3af;font-size:11.5px;line-height:1.5">
+        自动将量化后的颜色匹配到所选品牌最接近的官方色号。
+      </small>
+    </section>
+
+    <!-- ④ 导出 -->
+    <section class="card">
+      <h2>④ 导出</h2>
+      <button type="button" class="btn" id="btnPng">📥 导出成品图纸（PNG）</button>
+      <button type="button" class="btn ghost" id="btnLine">🖨️ 导出黑白线稿（PNG）</button>
+      <button type="button" class="btn ghost" id="btnList">📋 导出用料清单（TXT）</button>
+    </section>
+  </aside>
+
+  <!-- ==================== 右侧预览区 ==================== -->
+  <main class="stage">
+    <div class="toolbar">
+      <div class="seg" id="viewSeg">
+        <button type="button" data-view="grid" class="on">效果图</button>
+        <button type="button" data-view="compare">对比</button>
+        <button type="button" data-view="orig">原图</button>
+      </div>
+      <div class="seg" id="styleSeg">
+        <button type="button" data-style="solid" class="on">实心</button>
+        <button type="button" data-style="hollow">空心</button>
+      </div>
+      <button type="button" class="tbtn on" id="btnGrid">网格线</button>
+      <button type="button" class="tbtn on" id="btnCode">色号</button>
+      <div class="spacer"></div>
+      <button type="button" class="tbtn" id="btnFit">适配窗口</button>
+    </div>
+
+    <div class="panes">
+      <div class="pane pane-orig" id="paneOrig">
+        <img id="origImg" alt="原图" style="display:none">
+        <div class="empty-tip" id="origTip">原图预览</div>
+      </div>
+      <div class="pane pane-grid show" id="paneGrid">
+        <canvas id="cv"></canvas>
+      </div>
+    </div>
+
+    <div class="stats">
+      <span>图纸尺寸：<b id="stSize">—</b></span>
+      <span>总豆子数：<b id="stTotal">0</b></span>
+      <span>颜色总数：<b id="stColors">0</b></span>
+      <span>缩放：<b id="stZoom">100%</b></span>
+    </div>
+  </main>
+</div>
+
+<script>
+/* =========================================================================
+ *  拼豆图纸生成器 —— 单文件实现
+ *  所有代码内联，无任何外部依赖
+ * ========================================================================= */
+(function () {
+  'use strict';
+
+  /* 确保 DOM 就绪后再启动 */
+  function ready(fn) {
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', fn, false);
+    } else {
+      fn();
+    }
+  }
+
+  ready(function () {
+
+    /* ======================================================================
+     *  一、内置色卡数据
+     * ====================================================================== */
+
+    var COLOR_LIBRARY = [
+      { n: '白色',     h: '#FFFFFF' }, { n: '奶白',     h: '#F8F1E4' },
+      { n: '浅米',     h: '#EFE0C5' }, { n: '米黄',     h: '#E5CFA3' },
+      { n: '沙色',     h: '#E0CDA9' }, { n: '卡其',     h: '#C3B091' },
+      { n: '浅灰',     h: '#DCDCDC' }, { n: '银灰',     h: '#B8BCC0' },
+      { n: '中灰',     h: '#8E9296' }, { n: '深灰',     h: '#5A5E62' },
+      { n: '炭黑',     h: '#33363A' }, { n: '黑色',     h: '#111111' },
+      { n: '肤色',     h: '#FFD9B8' }, { n: '浅桃',     h: '#FFC9A9' },
+      { n: '珊瑚粉',   h: '#FF9E8E' }, { n: '浅粉',     h: '#FFC8D8' },
+      { n: '粉色',     h: '#F78FB3' }, { n: '玫红',     h: '#E8437E' },
+      { n: '深玫红',   h: '#B81E5C' }, { n: '大红',     h: '#E8112D' },
+      { n: '正红',     h: '#CE1126' }, { n: '砖红',     h: '#A83B2E' },
+      { n: '酒红',     h: '#7A1F2B' }, { n: '浅橙',     h: '#FFB870' },
+      { n: '橙色',     h: '#F58220' }, { n: '深橙',     h: '#DC5A0B' },
+      { n: '浅黄',     h: '#FFF3A6' }, { n: '柠檬黄',   h: '#FFE800' },
+      { n: '金黄',     h: '#FFC20E' }, { n: '土黄',     h: '#D4A017' },
+      { n: '奶油黄',   h: '#FFF7D6' }, { n: '浅棕',     h: '#C99A6B' },
+      { n: '驼色',     h: '#B98A5E' }, { n: '棕色',     h: '#8B5A2B' },
+      { n: '深棕',     h: '#5C3A21' }, { n: '咖啡',     h: '#3B2416' },
+      { n: '米咖',     h: '#D6C0A0' }, { n: '砖棕',     h: '#9C5B3B' },
+      { n: '浅绿',     h: '#C6E6A2' }, { n: '黄绿',     h: '#A8D14B' },
+      { n: '草绿',     h: '#7AC143' }, { n: '绿色',     h: '#00A650' },
+      { n: '深绿',     h: '#0B6B3A' }, { n: '墨绿',     h: '#14472E' },
+      { n: '橄榄绿',   h: '#6B7A2B' }, { n: '军绿',     h: '#4B5320' },
+      { n: '薄荷绿',   h: '#9FE2C8' }, { n: '青色',     h: '#00B7C2' },
+      { n: '蓝绿',     h: '#00A0A0' }, { n: '浅天蓝',   h: '#BFE6F5' },
+      { n: '天蓝',     h: '#6EC1E4' }, { n: '湖蓝',     h: '#2A9BD4' },
+      { n: '蓝色',     h: '#0072BC' }, { n: '深蓝',     h: '#00437A' },
+      { n: '藏青',     h: '#1B2A49' }, { n: '浅灰蓝',   h: '#AFC4D6' },
+      { n: '石板灰',   h: '#7A8B99' }, { n: '浅紫',     h: '#D9C2E9' },
+      { n: '薰衣草',   h: '#B79FD6' }, { n: '粉紫',     h: '#E0A8D8' },
+      { n: '紫色',     h: '#7B2E8E' }, { n: '深紫',     h: '#4A1E5C' },
+      { n: '紫红',     h: '#A23B8E' }, { n: '荧光粉',   h: '#FF3E96' },
+      { n: '荧光绿',   h: '#39FF14' }, { n: '荧光橙',   h: '#FF7A00' }
+    ];
+
+    var BRANDS = {
+      mard:   { label: 'MARD 小豆', prefix: 'M' },
+      perler: { label: 'Perler',    prefix: 'P' },
+      hama:   { label: 'Hama',      prefix: 'H' }
+    };
+
+    /* ======================================================================
+     *  二、通用工具函数
+     * ====================================================================== */
+
+    function $(id) { return document.getElementById(id); }
+    function pad2(n) { return n < 10 ? '0' + n : '' + n; }
+    function clamp(v, a, b) { return v < a ? a : (v > b ? b : v); }
+    function clamp255(v) { return v < 0 ? 0 : (v > 255 ? 255 : v); }
+
+    function hexToRgb(hex) {
+      var v = parseInt(hex.slice(1), 16);
+      return [(v >> 16) & 255, (v >> 8) & 255, v & 255];
+    }
+
+    function contrastColor(hex) {
+      var c = hexToRgb(hex);
+      var l = 0.299 * c[0] + 0.587 * c[1] + 0.114 * c[2];
+      return l > 150 ? '#222222' : '#ffffff';
+    }
+
+    function colorDist(r1, g1, b1, r2, g2, b2) {
+      var dr = r1 - r2, dg = g1 - g2, db = b1 - b2;
+      return dr * dr * 0.30 + dg * dg * 0.59 + db * db * 0.11;
+    }
+
+    function repeatStr(ch, n) {
+      var s = '';
+      for (var i = 0; i < n; i++) s += ch;
+      return s;
+    }
+
+    function downloadBlob(blob, filename) {
+      if (!blob) { alert('导出失败，请重试'); return; }
+      var url = URL.createObjectURL(blob);
+      var a = document.createElement('a');
+      a.href = url;
+      a.download = filename;
+      a.style.display = 'none';
+      document.body.appendChild(a);
+      a.click();
+      setTimeout(function () {
+        try { URL.revokeObjectURL(url); } catch (e) {}
+        if (a.parentNode) a.parentNode.removeChild(a);
+      }, 1500);
+    }
+
+    function canvasToBlob(canvas, cb) {
+      if (typeof canvas.toBlob === 'function') {
+        canvas.toBlob(function (b) { cb(b); }, 'image/png');
+        return;
+      }
+      try {
+        var dataUrl = canvas.toDataURL('image/png');
+        var bin = atob(dataUrl.split(',')[1]);
+        var len = bin.length;
+        var arr = new Uint8Array(len);
+        for (var i = 0; i < len; i++) arr[i] = bin.charCodeAt(i);
+        cb(new Blob([arr], { type: 'image/png' }));
+      } catch (e) {
+        cb(null);
+      }
+    }
+
+    function timestamp() {
+      var d = new Date();
+      return '' + d.getFullYear() + pad2(d.getMonth() + 1) + pad2(d.getDate()) +
+             '_' + pad2(d.getHours()) + pad2(d.getMinutes()) + pad2(d.getSeconds());
+    }
+
+    /* ======================================================================
+     *  三、色卡构建
+     * ====================================================================== */
+
+    var libCache = {};
+
+    function getLibrary(brand) {
+      if (libCache[brand]) return libCache[brand];
+      var b = BRANDS[brand] || BRANDS.mard;
+      var lib = [];
+      for (var i = 0; i < COLOR_LIBRARY.length; i++) {
+        var c = COLOR_LIBRARY[i];
+        var rgb = hexToRgb(c.h);
+        lib.push({
+          code: b.prefix + pad2(i + 1),
+          name: c.n,
+          hex: c.h,
+          r: rgb[0], g: rgb[1], b: rgb[2]
+        });
+      }
+      libCache[brand] = lib;
+      return lib;
+    }
+
+    /* ======================================================================
+     *  四、图像处理算法
+     * ====================================================================== */
+
+    function adjustColors(d, bright, contrast, sat) {
+      var bAdd = bright * 2.55;
+      var cMul = (contrast + 100) / 100;
+      var cOff = 128 * (1 - cMul);
+      var sMul = 1 + sat / 100;
+      var doSat = (sat !== 0);
+      var i, r, g, bl, lum;
+
+      for (i = 0; i < d.length; i += 4) {
+        r = d[i]; g = d[i + 1]; bl = d[i + 2];
+
+        if (doSat) {
+          lum = 0.2126 * r + 0.7152 * g + 0.0722 * bl;
+          r = lum + (r - lum) * sMul;
+          g = lum + (g - lum) * sMul;
+          bl = lum + (bl - lum) * sMul;
+        }
+
+        r = r * cMul + cOff + bAdd;
+        g = g * cMul + cOff + bAdd;
+        bl = bl * cMul + cOff + bAdd;
+
+        d[i]     = clamp255(r);
+        d[i + 1] = clamp255(g);
+        d[i + 2] = clamp255(bl);
+      }
+    }
+
+    function computeBgMask(d, W, H, tol) {
+      var sr = 0, sg = 0, sb = 0, n = 0, dx, dy, x, y, i;
+      var corners = [[0, 0], [W - 1, 0], [0, H - 1], [W - 1, H - 1]];
+
+      for (var ci = 0; ci < corners.length; ci++) {
+        var cx = corners[ci][0], cy = corners[ci][1];
+        for (dy = -1; dy <= 1; dy++) {
+          for (dx = -1; dx <= 1; dx++) {
+            x = cx + dx; y = cy + dy;
+            if (x < 0 || y < 0 || x >= W || y >= H) continue;
+            i = (y * W + x) * 4;
+            sr += d[i]; sg += d[i + 1]; sb += d[i + 2]; n++;
+          }
+        }
+      }
+      if (n === 0) return null;
+      sr /= n; sg /= n; sb /= n;
+
+      var tol2 = tol * tol;
+
+      function similar(idx) {
+        var dr = d[idx] - sr, dg = d[idx + 1] - sg, db = d[idx + 2] - sb;
+        return (dr * dr + dg * dg + db * db) < tol2;
+      }
+
+      var total = W * H;
+      var mask = new Uint8Array(total);
+      var visited = new Uint8Array(total);
+      var stack = [];
+
+      function seed(px, py) {
+        var p = py * W + px;
+        if (visited[p]) return;
+        visited[p] = 1;
+        if (!similar(p * 4)) return;
+        mask[p] = 1;
+        stack.push(p);
+      }
+
+      for (x = 0; x < W; x++) { seed(x, 0); seed(x, H - 1); }
+      for (y = 0; y < H; y++) { seed(0, y); seed(W - 1, y); }
+
+      while (stack.length) {
+        var p = stack.pop();
+        var px = p % W;
+        var py = (p - px) / W;
+        if (px > 0)     seed(px - 1, py);
+        if (px < W - 1) seed(px + 1, py);
+        if (py > 0)     seed(px, py - 1);
+        if (py < H - 1) seed(px, py + 1);
+      }
+      return mask;
+    }
+
+    function kmeans(pts, k, maxIter) {
+      var n = pts.length / 3;
+      if (n === 0) return [];
+      k = Math.max(1, Math.min(k, n));
+      maxIter = maxIter || 10;
+
+      var order = new Array(n);
+      var lum = new Float32Array(n);
+      var i, j, c;
+      for (i = 0; i < n; i++) {
+        order[i] = i;
+        lum[i] = 0.2126 * pts[i * 3] + 0.7152 * pts[i * 3 + 1] + 0.0722 * pts[i * 3 + 2];
+      }
+      order.sort(function (a, b) { return lum[a] - lum[b]; });
+
+      var cent = [];
+      for (i = 0; i < k; i++) {
+        var t = Math.floor((i + 0.5) * n / k);
+        if (t > n - 1) t = n - 1;
+        var o = order[t] * 3;
+        cent.push([pts[o], pts[o + 1], pts[o + 2]]);
+      }
+
+      var assign = new Int32Array(n);
+      var sum = new Float64Array(k * 3);
+      var cnt = new Int32Array(k);
+
+      for (var iter = 0; iter < maxIter; iter++) {
+        var moved = 0;
+        for (i = 0; i < n; i++) {
+          var r = pts[i * 3], g = pts[i * 3 + 1], b = pts[i * 3 + 2];
+          var best = 0, bd = Infinity;
+          for (c = 0; c < k; c++) {
+            var cc = cent[c];
+            var dr = r - cc[0], dg = g - cc[1], db = b - cc[2];
+            var dist = dr * dr + dg * dg + db * db;
+            if (dist < bd) { bd = dist; best = c; }
+          }
+          if (assign[i] !== best) { assign[i] = best; moved++; }
+        }
+
+        for (i = 0; i < sum.length; i++) sum[i] = 0;
+        for (i = 0; i < k; i++) cnt[i] = 0;
+
+        for (i = 0; i < n; i++) {
+          c = assign[i];
+          sum[c * 3]     += pts[i * 3];
+          sum[c * 3 + 1] += pts[i * 3 + 1];
+          sum[c * 3 + 2] += pts[i * 3 + 2];
+          cnt[c]++;
+        }
+        for (c = 0; c < k; c++) {
+          if (cnt[c] > 0) {
+            cent[c][0] = sum[c * 3] / cnt[c];
+            cent[c][1] = sum[c * 3 + 1] / cnt[c];
+            cent[c][2] = sum[c * 3 + 2] / cnt[c];
+          }
+        }
+        if (moved === 0 && iter > 0) break;
+      }
+
+      var used = {};
+      var out = [];
+      for (i = 0; i < n; i++) {
+        c = assign[i];
+        if (!used[c]) { used[c] = 1; out.push(cent[c]); }
+      }
+      return out;
+    }
+
+    function nearestLib(r, g, b, lib) {
+      var best = 0, bd = Infinity;
+      for (var i = 0; i < lib.length; i++) {
+        var c = lib[i];
+        var dist = colorDist(r, g, b, c.r, c.g, c.b);
+        if (dist < bd) { bd = dist; best = i; }
+      }
+      return best;
+    }
+
+    function nearestPalette(r, g, b, pal) {
+      var best = 0, bd = Infinity;
+      for (var i = 0; i < pal.length; i++) {
+        var c = pal[i];
+        var dist = colorDist(r, g, b, c.r, c.g, c.b);
+        if (dist < bd) { bd = dist; best = i; }
+      }
+      return best;
+    }
+
+    /* ======================================================================
+     *  五、DOM 引用与全局状态
+     * ====================================================================== */
+
+    var cv        = $('cv');
+    var ctx       = cv.getContext('2d');
+    var dropEl    = $('drop');
+    var fileEl    = $('fileInput');
+    var thumbBox  = $('thumbBox');
+    var thumbImg  = $('thumbImg');
+    var origImg   = $('origImg');
+    var origTip   = $('origTip');
+
+    var inW       = $('inW');
+    var inH       = $('inH');
+    var inColor   = $('inColor');
+    var lockRatio = $('lockRatio');
+    var rBri      = $('rBri'), vBri = $('vBri');
+    var rCon      = $('rCon'), vCon = $('vCon');
+    var rSat      = $('rSat'), vSat = $('vSat');
+    var cbBg      = $('cbBg');
+    var bgTolWrap = $('bgTolWrap');
+    var rTol      = $('rTol'), vTol = $('vTol');
+
+    var sizeChips   = $('sizeChips');
+    var colorChips  = $('colorChips');
+    var brandChips  = $('brandChips');
+    var viewSeg     = $('viewSeg');
+    var styleSeg    = $('styleSeg');
+    var btnGrid     = $('btnGrid');
+    var btnCode     = $('btnCode');
+    var btnFit      = $('btnFit');
+    var btnPng      = $('btnPng');
+    var btnLine     = $('btnLine');
+    var btnList     = $('btnList');
+    var paneOrig    = $('paneOrig');
+    var paneGrid    = $('paneGrid');
+    var stSize      = $('stSize');
+    var stTotal     = $('stTotal');
+    var stColors    = $('stColors');
+    var stZoom      = $('stZoom');
+
+    var P = {
+      w: 50, h: 50,
+      lockRatio: true,
+      colors: 16,
+      brightness: 0,
+      contrast: 0,
+      saturation: 0,
+      removeBg: false,
+      bgTol: 40,
+      brand: 'mard',
+      showGrid: true,
+      showCode: true,
+      hollow: false,
+      view: 'grid'
+    };
+
+    var state = {
+      srcImage: null,
+      srcAspect: 1,
+      grid: null,
+      palette: [],
+      byColor: [],
+      counts: [],
+      total: 0
+    };
+
+    var baseScale = 8;
+    var zoom = 1;
+    var panX = 0, panY = 0;
+    var dragging = false, lastX = 0, lastY = 0;
+    var dpr = Math.min(window.devicePixelRatio || 1, 2);
+    var drawPending = false;
+    var genTimer = null;
+
+    /* ======================================================================
+     *  六、画布尺寸与渲染
+     * ====================================================================== */
+
+    function resizeCanvas() {
+      var rect = cv.getBoundingClientRect();
+      dpr = Math.min(window.devicePixelRatio || 1, 2);
+      var w = Math.max(1, Math.round(rect.width * dpr));
+      var h = Math.max(1, Math.round(rect.height * dpr));
+      if (cv.width !== w || cv.height !== h) {
+        cv.width = w;
+        cv.height = h;
+      }
+    }
+
+    /* 用 setTimeout 做绘制节流，避免重复入队 */
+    function requestDraw() {
+      if (drawPending) return;
+      drawPending = true;
+      setTimeout(function () {
+        drawPending = false;
+        draw();
+      }, 12);
+    }
+
+    function updateZoomLabel() {
+      stZoom.textContent = Math.round(zoom * 100) + '%';
+    }
+
+    function fitView() {
+      var cw = cv.clientWidth;
+      var ch = cv.clientHeight;
+      var g = state.grid;
+      if (!cw || !ch || !g) { requestDraw(); return; }
+
+      var pad = 26;
+      baseScale = Math.min((cw - pad * 2) / g.w, (ch - pad * 2) / g.h);
+      if (!isFinite(baseScale) || baseScale < 0.5) baseScale = 0.5;
+      zoom = 1;
+      panX = (cw - g.w * baseScale) / 2;
+      panY = (ch - g.h * baseScale) / 2;
+      updateZoomLabel();
+      requestDraw();
+    }
+
+    function draw() {
+      var cw = cv.clientWidth;
+      var ch = cv.clientHeight;
+      if (cw <= 0 || ch <= 0) return;
+
+      resizeCanvas();
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      ctx.clearRect(0, 0, cw, ch);
+      ctx.fillStyle = '#eef1f5';
+      ctx.fillRect(0, 0, cw, ch);
+
+      var g = state.grid;
+
+      if (!g || !g.cells) {
+        ctx.fillStyle = '#9aa3af';
+        ctx.font = '14px -apple-system,"PingFang SC","Microsoft YaHei",sans-serif';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText('上传图片后这里会显示拼豆图纸', cw / 2, ch / 2);
+        return;
+      }
+
+      var s = baseScale * zoom;
+      var ox = panX, oy = panY;
+      var gw = g.w, gh = g.h;
+
+      /* 图纸白底 */
+      ctx.fillStyle = '#ffffff';
+      ctx.fillRect(ox, oy, gw * s, gh * s);
+
+      /* 视口裁剪范围 */
+      var padC = 2;
+      var x0 = Math.max(0, Math.floor(-ox / s) - padC);
+      var x1 = Math.min(gw, Math.ceil((cw - ox) / s) + padC);
+      var y0 = Math.max(0, Math.floor(-oy / s) - padC);
+      var y1 = Math.min(gh, Math.ceil((ch - oy) / s) + padC);
+
+      var radius = s * 0.44;
+      var useCircle = s >= 7;
+
+      /* ---------- 绘制豆子 ---------- */
+      for (var gi = 0; gi < state.byColor.length; gi++) {
+        var grp = state.byColor[gi];
+        var idxs = grp.indices;
+        var any = false;
+
+        if (P.hollow) {
+          ctx.beginPath();
+          ctx.strokeStyle = grp.hex;
+          ctx.lineWidth = Math.max(0.8, s * 0.2);
+          for (var k = 0; k < idxs.length; k++) {
+            var p = idxs[k];
+            var px = p % gw;
+            if (px < x0 || px >= x1) continue;
+            var py = (p - px) / gw;
+            if (py < y0 || py >= y1) continue;
+            var cxp = ox + px * s + s / 2;
+            var cyp = oy + py * s + s / 2;
+            ctx.moveTo(cxp + radius, cyp);
+            ctx.arc(cxp, cyp, radius, 0, Math.PI * 2);
+            any = true;
+          }
+          if (any) ctx.stroke();
+
+        } else if (useCircle) {
+          ctx.beginPath();
+          ctx.fillStyle = grp.hex;
+          for (var k2 = 0; k2 < idxs.length; k2++) {
+            var p2 = idxs[k2];
+            var px2 = p2 % gw;
+            if (px2 < x0 || px2 >= x1) continue;
+            var py2 = (p2 - px2) / gw;
+            if (py2 < y0 || py2 >= y1) continue;
+            var cxp2 = ox + px2 * s + s / 2;
+            var cyp2 = oy + py2 * s + s / 2;
+            ctx.moveTo(cxp2 + radius, cyp2);
+            ctx.arc(cxp2, cyp2, radius, 0, Math.PI * 2);
+            any = true;
+          }
+          if (any) ctx.fill();
+
+        } else {
+          ctx.beginPath();
+          ctx.fillStyle = grp.hex;
+          for (var k3 = 0; k3 < idxs.length; k3++) {
+            var p3 = idxs[k3];
+            var px3 = p3 % gw;
+            if (px3 < x0 || px3 >= x1) continue;
+            var py3 = (p3 - px3) / gw;
+            if (py3 < y0 || py3 >= y1) continue;
+            ctx.rect(ox + px3 * s, oy + py3 * s, s, s);
+            any = true;
+          }
+          if (any) ctx.fill();
+        }
+      }
+
+      /* ---------- 网格线 ---------- */
+      if (P.showGrid && s >= 4) {
+        ctx.strokeStyle = 'rgba(0,0,0,0.16)';
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        var sx = Math.max(0, x0), ex = Math.min(gw, x1);
+        var sy = Math.max(0, y0), ey = Math.min(gh, y1);
+        var xx, yy;
+        for (xx = sx; xx <= ex; xx++) {
+          var lx = Math.round(ox + xx * s) + 0.5;
+          ctx.moveTo(lx, oy + sy * s);
+          ctx.lineTo(lx, oy + ey * s);
+        }
+        for (yy = sy; yy <= ey; yy++) {
+          var ly = Math.round(oy + yy * s) + 0.5;
+          ctx.moveTo(ox + sx * s, ly);
+          ctx.lineTo(ox + ex * s, ly);
+        }
+        ctx.stroke();
+      }
+
+      /* ---------- 色号标注 ---------- */
+      if (P.showCode && s >= 16) {
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        var fs = Math.min(Math.round(s * 0.36), 15);
+        if (fs < 6) fs = 6;
+        ctx.font = '600 ' + fs + 'px -apple-system,"PingFang SC","Microsoft YaHei",sans-serif';
+
+        for (var cy2 = y0; cy2 < y1; cy2++) {
+          for (var cx2 = x0; cx2 < x1; cx2++) {
+            var ci = g.cells[cy2 * gw + cx2];
+            if (ci < 0) continue;
+            var col = state.palette[ci];
+            if (!col) continue;
+            ctx.fillStyle = contrastColor(col.hex);
+            ctx.fillText(col.code, ox + cx2 * s + s / 2, oy + cy2 * s + s / 2 + 0.5);
+          }
+        }
+      }
+    }
+
+    /* ======================================================================
+     *  七、画布交互
+     * ====================================================================== */
+
+    cv.addEventListener('wheel', function (e) {
+      if (!state.grid) return;
+      e.preventDefault();
+      var rect = cv.getBoundingClientRect();
+      var mx = e.clientX - rect.left;
+      var my = e.clientY - rect.top;
+
+      var oldScale = baseScale * zoom;
+      var delta = e.deltaY;
+      if (e.deltaMode === 1) delta *= 16;
+      else if (e.deltaMode === 2) delta *= 100;
+
+      var factor = Math.pow(1.0018, -delta);
+      var newZoom = clamp(zoom * factor, 0.05, 50);
+      var newScale = baseScale * newZoom;
+
+      panX = mx - (mx - panX) * (newScale / oldScale);
+      panY = my - (my - panY) * (newScale / oldScale);
+      zoom = newZoom;
+
+      updateZoomLabel();
+      requestDraw();
+    }, { passive: false });
+
+    cv.addEventListener('pointerdown', function (e) {
+      if (!state.grid) return;
+      dragging = true;
+      lastX = e.clientX;
+      lastY = e.clientY;
+      cv.classList.add('dragging');
+      try { cv.setPointerCapture(e.pointerId); } catch (err) {}
+      e.preventDefault();
+    });
+
+    cv.addEventListener('pointermove', function (e) {
+      if (!dragging) return;
+      panX += e.clientX - lastX;
+      panY += e.clientY - lastY;
+      lastX = e.clientX;
+      lastY = e.clientY;
+      requestDraw();
+    });
+
+    function endDrag() {
+      dragging = false;
+      cv.classList.remove('dragging');
+    }
+    cv.addEventListener('pointerup', endDrag);
+    cv.addEventListener('pointercancel', endDrag);
+    cv.addEventListener('pointerleave', function (e) {
+      if (dragging && e.buttons === 0) endDrag();
+    });
+
+    /* 触摸设备兜底 */
+    if (!window.PointerEvent) {
+      cv.addEventListener('touchstart', function (e) {
+        if (!state.grid || e.touches.length !== 1) return;
+        dragging = true;
+        lastX = e.touches[0].clientX;
+        lastY = e.touches[0].clientY;
+        cv.classList.add('dragging');
+        e.preventDefault();
+      }, { passive: false });
+
+      cv.addEventListener('touchmove', function (e) {
+        if (!dragging || e.touches.length !== 1) return;
+        panX += e.touches[0].clientX - lastX;
+        panY += e.touches[0].clientY - lastY;
+        lastX = e.touches[0].clientX;
+        lastY = e.touches[0].clientY;
+        requestDraw();
+        e.preventDefault();
+      }, { passive: false });
+
+      cv.addEventListener('touchend', function () { endDrag(); });
+      cv.addEventListener('touchcancel', function () { endDrag(); });
+    }
+
+    cv.addEventListener('dblclick', function () { fitView(); });
+
+    if (window.ResizeObserver) {
+      new ResizeObserver(function () { requestDraw(); }).observe(paneGrid);
+    }
+    window.addEventListener('resize', function () { requestDraw(); });
+    window.addEventListener('orientationchange', function () {
+      setTimeout(function () { requestDraw(); }, 220);
+    });
+
+    /* ======================================================================
+     *  八、图片上传
+     * ====================================================================== */
+
+    function loadFile(file) {
+      if (!file) return;
+      if (!file.type || file.type.indexOf('image/') !== 0) {
+        alert('请上传 JPG / PNG / WebP 格式的图片');
+        return;
+      }
+      if (typeof FileReader === 'undefined') {
+        alert('当前浏览器不支持本地图片读取，请更换浏览器');
+        return;
+      }
+
+      var reader = new FileReader();
+      reader.onload = function (ev) {
+        var dataUrl = ev.target.result;
+        var img = new Image();
+
+        img.onload = function () {
+          state.srcImage = makeSource(img);
+          state.srcAspect = state.srcImage.width / state.srcImage.height;
+
+          thumbImg.src = dataUrl;
+          origImg.src = dataUrl;
+          thumbBox.style.display = 'block';
+          origImg.style.display = 'block';
+          origTip.style.display = 'none';
+
+          if (P.lockRatio) {
+            P.h = clamp(Math.round(P.w / state.srcAspect), 4, 200);
+            inH.value = P.h;
+          }
+          generate(true);
+        };
+
+        img.onerror = function () {
+          alert('图片解码失败，请换一张图片试试');
+        };
+
+        img.src = dataUrl;
+      };
+
+      reader.onerror = function () {
+        alert('文件读取失败，请重试');
+      };
+
+      reader.readAsDataURL(file);
+    }
+
+    function makeSource(img) {
+      var MAX = 1200;
+      var w = img.naturalWidth || img.width;
+      var h = img.naturalHeight || img.height;
+      if (!w || !h) return img;
+      if (Math.max(w, h) <= MAX) return img;
+
+      var k = MAX / Math.max(w, h);
+      w = Math.max(1, Math.round(w * k));
+      h = Math.max(1, Math.round(h * k));
+
+      var c = document.createElement('canvas');
+      c.width = w; c.height = h;
+      var cx = c.getContext('2d');
+      cx.imageSmoothingEnabled = true;
+      if ('imageSmoothingQuality' in cx) cx.imageSmoothingQuality = 'high';
+      cx.drawImage(img, 0, 0, w, h);
+      return c;
+    }
+
+    /* 上传事件绑定 */
+    dropEl.addEventListener('click', function () { fileEl.click(); });
+
+    ['dragenter', 'dragover'].forEach(function (ev) {
+      dropEl.addEventListener(ev, function (e) {
+        e.preventDefault();
+        e.stopPropagation();
+        dropEl.classList.add('over');
+      });
+    });
+    ['dragleave', 'drop'].forEach(function (ev) {
+      dropEl.addEventListener(ev, function (e) {
+        e.preventDefault();
+        e.stopPropagation();
+        dropEl.classList.remove('over');
+      });
+    });
+
+    var skipWindowDrop = false;
+    dropEl.addEventListener('drop', function (e) {
+      skipWindowDrop = true;
+      setTimeout(function () { skipWindowDrop = false; }, 60);
+      var dt = e.dataTransfer;
+      if (dt && dt.files && dt.files[0]) loadFile(dt.files[0]);
+    });
+
+    window.addEventListener('dragover', function (e) { e.preventDefault(); });
+    window.addEventListener('drop', function (e) {
+      e.preventDefault();
+      if (skipWindowDrop) return;
+      var dt = e.dataTransfer;
+      if (dt && dt.files && dt.files[0]) loadFile(dt.files[0]);
+    });
+
+    fileEl.addEventListener('change', function (e) {
+      var f = e.target.files && e.target.files[0];
+      if (f) loadFile(f);
+      fileEl.value = '';
+    });
+
+    /* ======================================================================
+     *  九、核心生成流程
+     * ====================================================================== */
+
+    function debouncedGenerate(delay) {
+      clearTimeout(genTimer);
+      genTimer = setTimeout(function () { generate(false); },
+                            typeof delay === 'number' ? delay : 260);
+    }
+
+    function generate(resetView) {
+      if (!state.srcImage) return;
+
+      try {
+        var W = P.w, H = P.h;
+        var oldGrid = state.grid;
+        var sizeChanged = !oldGrid || oldGrid.w !== W || oldGrid.h !== H;
+        var total = W * H;
+
+        /* 1) 绘制到目标分辨率 */
+        var c = document.createElement('canvas');
+        c.width = W;
+        c.height = H;
+        var cx = c.getContext('2d');
+        cx.imageSmoothingEnabled = true;
+        if ('imageSmoothingQuality' in cx) cx.imageSmoothingQuality = 'high';
+        cx.clearRect(0, 0, W, H);
+        cx.drawImage(state.srcImage, 0, 0, W, H);
+
+        var imgData = cx.getImageData(0, 0, W, H);
+        var d = imgData.data;
+
+        /* 2) 色彩调整 */
+        if (P.brightness !== 0 || P.contrast !== 0 || P.saturation !== 0) {
+          adjustColors(d, P.brightness, P.contrast, P.saturation);
+        }
+
+        /* 3) 背景去除 */
+        var mask = null;
+        if (P.removeBg) mask = computeBgMask(d, W, H, P.bgTol);
+
+        /* 4) 收集前景像素 */
+        var pts = [];
+        var p, i;
+        for (p = 0; p < total; p++) {
+          if (mask && mask[p]) continue;
+          i = p * 4;
+          pts.push(d[i], d[i + 1], d[i + 2]);
+        }
+        if (pts.length === 0) pts = [255, 255, 255];
+
+        /* 5) 采样 + K-Means 量化 */
+        var nPix = pts.length / 3;
+        var sample = pts;
+        if (nPix > 6000) {
+          sample = [];
+          var step = nPix / 6000;
+          for (var si = 0; si < 6000; si++) {
+            var sj = Math.floor(si * step) * 3;
+            sample.push(pts[sj], pts[sj + 1], pts[sj + 2]);
+          }
+        }
+        var K = Math.max(1, Math.min(P.colors, nPix));
+        var centroids = kmeans(sample, K, 10);
+        if (centroids.length === 0) centroids = [[128, 128, 128]];
+
+        /* 6) 聚类中心 → 品牌色卡 */
+        var lib = getLibrary(P.brand);
+        var chosenMap = {};
+        var chosenList = [];
+        for (var ci2 = 0; ci2 < centroids.length; ci2++) {
+          var ct = centroids[ci2];
+          var li = nearestLib(ct[0], ct[1], ct[2], lib);
+          if (!chosenMap[li]) {
+            chosenMap[li] = 1;
+            chosenList.push(lib[li]);
+          }
+        }
+        var palette = chosenList.length ? chosenList : [lib[0]];
+
+        /* 7) 逐格匹配最终色号 */
+        var cells = new Int16Array(total);
+        for (p = 0; p < total; p++) cells[p] = -1;
+
+        for (p = 0; p < total; p++) {
+          if (mask && mask[p]) continue;
+          i = p * 4;
+          cells[p] = nearestPalette(d[i], d[i + 1], d[i + 2], palette);
+        }
+
+        /* 8) 统计用料 */
+        var colorCount = {};
+        var beadTotal = 0;
+        for (p = 0; p < total; p++) {
+          var idx = cells[p];
+          if (idx < 0) continue;
+          colorCount[idx] = (colorCount[idx] || 0) + 1;
+          beadTotal++;
+        }
+
+        var counts = [];
+        for (var key in colorCount) {
+          if (!Object.prototype.hasOwnProperty.call(colorCount, key)) continue;
+          counts.push({ color: palette[key], count: colorCount[key] });
+        }
+        counts.sort(function (a, b) { return b.count - a.count; });
+
+        /* 9) 按颜色归组 */
+        var groups = {};
+        for (p = 0; p < total; p++) {
+          var ci3 = cells[p];
+          if (ci3 < 0) continue;
+          if (!groups[ci3]) groups[ci3] = [];
+          groups[ci3].push(p);
+        }
+        var byColor = [];
+        for (var gk in groups) {
+          if (!Object.prototype.hasOwnProperty.call(groups, gk)) continue;
+          byColor.push({ hex: palette[gk].hex, indices: groups[gk] });
+        }
+        byColor.sort(function (a, b) { return b.indices.length - a.indices.length; });
+
+        /* 10) 写入状态并刷新 */
+        state.grid = { w: W, h: H, cells: cells };
+        state.palette = palette;
+        state.byColor = byColor;
+        state.counts = counts;
+        state.total = beadTotal;
+
+        stSize.textContent = W + ' × ' + H;
+        stTotal.textContent = beadTotal;
+        stColors.textContent = counts.length;
+
+        if (resetView || sizeChanged) fitView();
+        else requestDraw();
+
+      } catch (err) {
+        console.error(err);
+        alert('图像处理失败：' + (err && err.message ? err.message : err));
+      }
+    }
+
+    /* ======================================================================
+     *  十、界面控件绑定
+     * ====================================================================== */
+
+    /* ---------- 尺寸预设 ---------- */
+    sizeChips.addEventListener('click', function (e) {
+      var btn = e.target.closest ? e.target.closest('button[data-size]') : null;
+      if (!btn) return;
+
+      var kids = sizeChips.getElementsByTagName('button');
+      for (var i = 0; i < kids.length; i++) kids[i].classList.remove('on');
+      btn.classList.add('on');
+
+      P.w = parseInt(btn.getAttribute('data-size'), 10);
+
+      if (P.lockRatio && state.srcImage) {
+        P.h = clamp(Math.round(P.w / state.srcAspect), 4, 200);
+      } else if (!state.srcImage) {
+        P.h = P.w;
+      }
+      inW.value = P.w;
+      inH.value = P.h;
+      generate(true);
+    });
+
+    /* ---------- 自定义宽高 ---------- */
+    function onSizeInput(which) {
+      var w = parseInt(inW.value, 10);
+      var h = parseInt(inH.value, 10);
+      if (isNaN(w)) w = P.w;
+      if (isNaN(h)) h = P.h;
+      w = clamp(w, 4, 200);
+      h = clamp(h, 4, 200);
+
+      if (P.lockRatio && state.srcImage) {
+        if (which === 'w') h = clamp(Math.round(w / state.srcAspect), 4, 200);
+        else               w = clamp(Math.round(h * state.srcAspect), 4, 200);
+      }
+      P.w = w; P.h = h;
+      inW.value = w;
+      inH.value = h;
+      debouncedGenerate(320);
+    }
+    inW.addEventListener('input', function () { onSizeInput('w'); });
+    inH.addEventListener('input', function () { onSizeInput('h'); });
+
+    lockRatio.addEventListener('change', function (e) {
+      P.lockRatio = e.target.checked;
+      if (P.lockRatio && state.srcImage) onSizeInput('w');
+    });
+
+    /* ---------- 颜色数量 ---------- */
+    colorChips.addEventListener('click', function (e) {
+      var btn = e.target.closest ? e.target.closest('button[data-c]') : null;
+      if (!btn) return;
+
+      var kids = colorChips.getElementsByTagName('button');
+      for (var i = 0; i < kids.length; i++) kids[i].classList.remove('on');
+      btn.classList.add('on');
+
+      P.colors = parseInt(btn.getAttribute('data-c'), 10);
+      inColor.value = P.colors;
+      debouncedGenerate(220);
+    });
+
+    inColor.addEventListener('input', function () {
+      var v = parseInt(inColor.value, 10);
+      if (isNaN(v)) return;
+      v = clamp(v, 2, 64);
+      P.colors = v;
+
+      var kids = colorChips.getElementsByTagName('button');
+      for (var i = 0; i < kids.length; i++) {
+        kids[i].classList.toggle('on', parseInt(kids[i].getAttribute('data-c'), 10) === v);
+      }
+      debouncedGenerate(320);
+    });
+
+    /* ---------- 滑块 ---------- */
+    function bindSlider(el, labelEl, key) {
+      el.addEventListener('input', function () {
+        P[key] = parseInt(el.value, 10);
+        labelEl.textContent = el.value;
+        debouncedGenerate(200);
+      });
+    }
+    bindSlider(rBri, vBri, 'brightness');
+    bindSlider(rCon, vCon, 'contrast');
+    bindSlider(rSat, vSat, 'saturation');
+
+    /* ---------- 背景去除 ---------- */
+    cbBg.addEventListener('change', function (e) {
+      P.removeBg = e.target.checked;
+      bgTolWrap.style.display = P.removeBg ? 'flex' : 'none';
+      debouncedGenerate(120);
+    });
+
+    rTol.addEventListener('input', function (e) {
+      P.bgTol = parseInt(e.target.value, 10);
+      vTol.textContent = e.target.value;
+      if (P.removeBg) debouncedGenerate(220);
+    });
+
+    /* ---------- 品牌色卡 ---------- */
+    brandChips.addEventListener('click', function (e) {
+      var btn = e.target.closest ? e.target.closest('button[data-brand]') : null;
+      if (!btn) return;
+
+      var kids = brandChips.getElementsByTagName('button');
+      for (var i = 0; i < kids.length; i++) kids[i].classList.remove('on');
+      btn.classList.add('on');
+
+      P.brand = btn.getAttribute('data-brand');
+      debouncedGenerate(120);
+    });
+
+    /* ---------- 视图切换 ---------- */
+    viewSeg.addEventListener('click', function (e) {
+      var btn = e.target.closest ? e.target.closest('button[data-view]') : null;
+      if (!btn) return;
+
+      var kids = viewSeg.getElementsByTagName('button');
+      for (var i = 0; i < kids.length; i++) kids[i].classList.remove('on');
+      btn.classList.add('on');
+
+      P.view = btn.getAttribute('data-view');
+
+      paneOrig.classList.remove('show');
+      paneGrid.classList.remove('show');
+
+      if (P.view === 'orig') {
+        paneOrig.classList.add('show');
+      } else if (P.view === 'compare') {
+        paneOrig.classList.add('show');
+        paneGrid.classList.add('show');
+      } else {
+        paneGrid.classList.add('show');
+      }
+
+      setTimeout(function () {
+        if (P.view !== 'orig') requestDraw();
+      }, 40);
+    });
+
+    /* ---------- 实心 / 空心 ---------- */
+    styleSeg.addEventListener('click', function (e) {
+      var btn = e.target.closest ? e.target.closest('button[data-style]') : null;
+      if (!btn) return;
+
+      var kids = styleSeg.getElementsByTagName('button');
+      for (var i = 0; i < kids.length; i++) kids[i].classList.remove('on');
+      btn.classList.add('on');
+
+      P.hollow = (btn.getAttribute('data-style') === 'hollow');
+      requestDraw();
+    });
+
+    /* ---------- 网格线 / 色号 ---------- */
+    btnGrid.addEventListener('click', function () {
+      P.showGrid = !P.showGrid;
+      btnGrid.classList.toggle('on', P.showGrid);
+      requestDraw();
+    });
+
+    btnCode.addEventListener('click', function () {
+      P.showCode = !P.showCode;
+      btnCode.classList.toggle('on', P.showCode);
+      requestDraw();
+    });
+
+    btnFit.addEventListener('click', function () { fitView(); });
+
+    /* ======================================================================
+     *  十一、导出功能
+     * ====================================================================== */
+
+    function calcCell(w, h) {
+      var MAXSIDE = 3200;
+      var cell = Math.min(40, Math.floor(MAXSIDE / w), Math.floor(MAXSIDE / h));
+      return clamp(cell, 12, 40);
+    }
+
+    function assertReady() {
+      if (!state.grid || state.total === 0) {
+        alert('请先上传图片生成图纸');
+        return false;
+      }
+      return true;
+    }
+
+    /* ---------- 导出成品图纸 ---------- */
+    btnPng.addEventListener('click', function () {
+      if (!assertReady()) return;
+
+      var g = state.grid;
+      var cell = calcCell(g.w, g.h);
+      var pad = Math.max(20, Math.round(cell * 1.2));
+      var cw = g.w * cell + pad * 2;
+      var chh = g.h * cell + pad * 2;
+
+      var c = document.createElement('canvas');
+      c.width = cw;
+      c.height = chh;
+      var x = c.getContext('2d');
+
+      x.fillStyle = '#ffffff';
+      x.fillRect(0, 0, cw, chh);
+
+      var r = cell * 0.44;
+      var fs = Math.max(6, Math.round(cell * 0.34));
+      x.textAlign = 'center';
+      x.textBaseline = 'middle';
+      x.font = '700 ' + fs + 'px -apple-system,"PingFang SC","Microsoft YaHei",sans-serif';
+
+      for (var py = 0; py < g.h; py++) {
+        for (var px = 0; px < g.w; px++) {
+          var ci = g.cells[py * g.w + px];
+          if (ci < 0) continue;
+          var col = state.palette[ci];
+          if (!col) continue;
+
+          var cxp = pad + px * cell + cell / 2;
+          var cyp = pad + py * cell + cell / 2;
+
+          x.beginPath();
+          x.arc(cxp, cyp, r, 0, Math.PI * 2);
+          x.fillStyle = col.hex;
+          x.fill();
+          x.strokeStyle = 'rgba(0,0,0,0.18)';
+          x.lineWidth = Math.max(1, cell * 0.03);
+          x.stroke();
+
+          if (cell >= 14) {
+            x.fillStyle = contrastColor(col.hex);
+            x.fillText(col.code, cxp, cyp + 0.5);
+          }
+        }
+      }
+
+      x.strokeStyle = 'rgba(0,0,0,0.10)';
+      x.lineWidth = 1;
+      x.beginPath();
+      var i, lx, ly;
+      for (i = 0; i <= g.w; i++) {
+        lx = Math.round(pad + i * cell) + 0.5;
+        x.moveTo(lx, pad);
+        x.lineTo(lx, pad + g.h * cell);
+      }
+      for (i = 0; i <= g.h; i++) {
+        ly = Math.round(pad + i * cell) + 0.5;
+        x.moveTo(pad, ly);
+        x.lineTo(pad + g.w * cell, ly);
+      }
+      x.stroke();
+
+      x.strokeStyle = '#94a3b8';
+      x.lineWidth = 2;
+      x.strokeRect(pad, pad, g.w * cell, g.h * cell);
+
+      canvasToBlob(c, function (blob) {
+        downloadBlob(blob, '拼豆图纸_' + BRANDS[P.brand].label + '_' +
+                          g.w + 'x' + g.h + '_' + timestamp() + '.png');
+      });
+    });
+
+    /* ---------- 导出黑白线稿 ---------- */
+    btnLine.addEventListener('click', function () {
+      if (!assertReady()) return;
+
+      var g = state.grid;
+      var cell = calcCell(g.w, g.h);
+      var pad = Math.max(20, Math.round(cell * 1.2));
+      var cw = g.w * cell + pad * 2;
+      var chh = g.h * cell + pad * 2;
+
+      var c = document.createElement('canvas');
+      c.width = cw;
+      c.height = chh;
+      var x = c.getContext('2d');
+
+      x.fillStyle = '#ffffff';
+      x.fillRect(0, 0, cw, chh);
+
+      var r = cell * 0.42;
+      var fs = Math.max(6, Math.round(cell * 0.34));
+      x.textAlign = 'center';
+      x.textBaseline = 'middle';
+      x.font = '600 ' + fs + 'px -apple-system,"PingFang SC","Microsoft YaHei",sans-serif';
+
+      x.strokeStyle = '#111111';
+      x.fillStyle = '#111111';
+      x.lineWidth = Math.max(1, cell * 0.07);
+
+      for (var py = 0; py < g.h; py++) {
+        for (var px = 0; px < g.w; px++) {
+          var ci = g.cells[py * g.w + px];
+          if (ci < 0) continue;
+          var col = state.palette[ci];
+          if (!col) continue;
+
+          var cxp = pad + px * cell + cell / 2;
+          var cyp = pad + py * cell + cell / 2;
+
+          x.beginPath();
+          x.arc(cxp, cyp, r, 0, Math.PI * 2);
+          x.stroke();
+
+          if (cell >= 14) x.fillText(col.code, cxp, cyp + 0.5);
+        }
+      }
+
+      x.strokeStyle = 'rgba(0,0,0,0.22)';
+      x.lineWidth = 1;
+      x.beginPath();
+      var i, lx, ly;
+      for (i = 0; i <= g.w; i++) {
+        lx = Math.round(pad + i * cell) + 0.5;
+        x.moveTo(lx, pad);
+        x.lineTo(lx, pad + g.h * cell);
+      }
+      for (i = 0; i <= g.h; i++) {
+        ly = Math.round(pad + i * cell) + 0.5;
+        x.moveTo(pad, ly);
+        x.lineTo(pad + g.w * cell, ly);
+      }
+      x.stroke();
+
+      x.strokeStyle = '#000000';
+      x.lineWidth = 2;
+      x.strokeRect(pad, pad, g.w * cell, g.h * cell);
+
+      canvasToBlob(c, function (blob) {
+        downloadBlob(blob, '拼豆线稿_' + g.w + 'x' + g.h + '_' + timestamp() + '.png');
+      });
+    });
+
+    /* ---------- 导出用料清单 ---------- */
+    btnList.addEventListener('click', function () {
+      if (!assertReady()) return;
+
+      var g = state.grid;
+      var brandLabel = BRANDS[P.brand].label;
+
+      var lines = [];
+      lines.push('拼豆用料清单');
+      lines.push('品牌色卡：' + brandLabel);
+      lines.push('图纸尺寸：' + g.w + ' × ' + g.h + ' 格');
+      lines.push('总豆子数：' + state.total + ' 颗');
+      lines.push('颜色总数：' + state.counts.length + ' 种');
+      lines.push('生成时间：' + new Date().toLocaleString('zh-CN'));
+      lines.push('------------------------------------------');
+      lines.push('色号\t颜色名\t\t数量\t占比');
+      lines.push('------------------------------------------');
+
+      for (var i = 0; i < state.counts.length; i++) {
+        var item = state.counts[i];
+        var pct = (item.count / state.total * 100).toFixed(1) + '%';
+        var name = item.color.name;
+        var padLen = Math.max(1, 8 - name.length * 2);
+        var spaces = repeatStr(' ', padLen);
+        lines.push(item.color.code + '\t' + name + spaces + '\t' + item.count + ' 颗\t' + pct);
+      }
+
+      lines.push('------------------------------------------');
+      lines.push('合计：' + state.total + ' 颗，共 ' + state.counts.length + ' 种颜色');
+      lines.push('');
+      lines.push('（由拼豆图纸生成器在本地生成）');
+
+      var txt = lines.join('\n');
+      var blob = new Blob([txt], { type: 'text/plain;charset=utf-8' });
+
+      if (!blob || blob.size === undefined) {
+        blob = new Blob(['\ufeff' + txt]);
+      }
+      downloadBlob(blob, '拼豆用料清单_' + g.w + 'x' + g.h + '_' + timestamp() + '.txt');
+    });
+
+    /* ======================================================================
+     *  十二、初始化
+     * ====================================================================== */
+
+    resizeCanvas();
+    requestDraw();
+
+    /* 首次进入的引导文案 */
+    setTimeout(function () {
+      if (!state.grid) {
+        resizeCanvas();
+        ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+        ctx.fillStyle = '#9aa3af';
+        ctx.font = '14px -apple-system,"PingFang SC","Microsoft YaHei",sans-serif';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText('上传图片后这里会显示拼豆图纸', cv.clientWidth / 2, cv.clientHeight / 2);
+      }
+    }, 30);
+
+    /* 布局稳定后再适配一次视图（例如从隐藏到显示的场景） */
+    setTimeout(function () { if (state.grid) fitView(); }, 120);
+
+  });
+
+})();
+</script>
+</body>
+</html>
